@@ -13,11 +13,15 @@ import { useState } from "react";
 import firebase from "firebase";
 import getRecipientEmail from "../utils/getRecipient";
 import TimeAgo from "timeago-react";
+import { useRef } from "react";
 
 function ChatScreen({chat, messages}) {
     const [user] = useAuthState(auth);
     const [input, setinput] = useState("");
     const router = useRouter();
+    const endOfMessagesRef = useRef(null);
+
+
     const [messagesSnapshot] = useCollection(
         db
         .collection("chats")
@@ -31,7 +35,10 @@ function ChatScreen({chat, messages}) {
 
     )
 
+    
+
     const showMessages = () => {
+        
          if(messagesSnapshot) {
              return messagesSnapshot.docs.map((message) => (
                  <Message 
@@ -39,7 +46,7 @@ function ChatScreen({chat, messages}) {
                     user={message.data().user} 
                     message={{
                         ...message.data(),
-                        timestamp: message.data().timestamp?.toDate().getTime(),
+                        timestamp: message.data().timeStamp?.toDate().getTime(),
                     }}
                  ></Message>
              ))
@@ -49,6 +56,13 @@ function ChatScreen({chat, messages}) {
                  <Message key={message.id} message={message} user={message.user}></Message>
              ))
          }
+    }
+
+    const scrollToBottom = () => {
+        endOfMessagesRef.current.scrollIntoView({
+            behavior: 'smooth',
+            block: 'start'
+        })
     }
 
     const sendMessage = (e) => {
@@ -70,6 +84,7 @@ function ChatScreen({chat, messages}) {
         })
 
         setinput("");
+        scrollToBottom();
     }
 
     const receipientEmail = getRecipientEmail(chat.users, user);
@@ -90,7 +105,7 @@ function ChatScreen({chat, messages}) {
                         <p>Last active: {''} 
                         {receipient?.lastSeen?.toDate() ? (
                             <TimeAgo datetime={receipient?.lastSeen?.toDate()}></TimeAgo>
-                        ) : "Unavailable"}
+                        ) : "unavailable"}
                         </p>
 
                     ) : (
@@ -109,7 +124,7 @@ function ChatScreen({chat, messages}) {
 
             <MessageContainer>
                 {showMessages()}
-                <EndOfMessage></EndOfMessage>
+                <EndOfMessage ref={endOfMessagesRef}></EndOfMessage>
             </MessageContainer>
 
             <InputContainer>
@@ -164,7 +179,7 @@ const MessageContainer = styled.div`
     min-height: 90vh;
 `;
 const EndOfMessage = styled.div`
-
+    margin-bottom: 50px;
 `;
 const InputContainer = styled.form`
     display: flex;
